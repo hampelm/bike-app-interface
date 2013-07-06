@@ -1,6 +1,7 @@
 $(function(){
   // Set up the map with a base layer
-  //
+  var bingKey =  'Arc0Uekwc6xUCJJgDA6Kv__AL_rvEh4Hcpj4nkyUmGTIx-SxMd52PPmsqKbvI_ce'
+
   var map = L.map('map').setView([42.42, -83.02 ], 13);
   baseLayer = L.tileLayer('http://a.tiles.mapbox.com/v3/matth.map-pzt2g69t/{z}/{x}/{y}.png');
   map.addLayer(baseLayer);
@@ -28,21 +29,56 @@ $(function(){
 
 
   // Add the corsshair to the map
-  var crosshairLayer = L.marker([0,0], {icon: CrosshairIcon});
-  crosshairLayer.setLatLng(map.getCenter());
-  map.addLayer(crosshairLayer);
-  // Move the crosshairs as the map moves
-  map.on('move', function(e){
-    crosshairLayer.setLatLng(map.getCenter());
+  var pointLayer = L.marker(map.getCenter());
+  map.addLayer(pointLayer);
+
+  map.on('drag', function() {
+    pointLayer.setLatLng(map.getCenter());
   });
 
+  map.on('moveend', function() {
+    pointLayer.setLatLng(map.getCenter());
+  });
 
   // Handle button clicks
-  var pointLayer = L.marker(map.getCenter(), {icon: PlaceIcon});
   $('.issue').on('click', function() {
-    map.addLayer(pointLayer);
     pointLayer.setLatLng(map.getCenter());
     console.log("Added a point at ", map.getCenter());
   });
+
+  $('.address-search').on('click', function(event) {
+    event.preventDefault();
+
+    var address = $('#address').val();
+    geocodeAddress(address, function(error, data){
+      map.setView(data.coords, 17);
+    });
+  });
+
+
+  var geocodeAddress = function(address, callback) {
+    address = address + ' detroit, mi';
+    var geocodeEndpoint = 'http://dev.virtualearth.net/REST/v1/Locations/' + address + '?o=json&key=' + bingKey + '&jsonp=?';
+
+    $.ajax({
+      url: geocodeEndpoint,
+      dataType: 'json',
+      success: function (data) {
+        if (data.resourceSets.length > 0){
+          var result = data.resourceSets[0].resources[0];
+          callback(null, {
+            addressLine: result.address.addressLine,
+            coords: [result.point.coordinates[0], result.point.coordinates[1]]
+          });
+        } else {
+          callback({
+            type: 'GeocodingError',
+            message: 'No geocoding results found'
+          });
+        }
+      }
+    });
+  }
+
 
 });
