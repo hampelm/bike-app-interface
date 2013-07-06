@@ -44,6 +44,10 @@ $(function(){
   $('.issue').on('click', function() {
     pointLayer.setLatLng(map.getCenter());
     console.log("Added a point at ", map.getCenter());
+
+    $('.issue').removeClass('btn-success');
+    $('#submit').removeClass('disabled');
+    $(this).addClass('btn-success');
   });
 
   $('.address-search').on('click', function(event) {
